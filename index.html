@@ -25,7 +25,7 @@
             text-align: center;
             color: white;
             font-size: 24px;
-            display: none;
+            display: none; /* Спочатку приховано */
         }
 
         #gameOverMessage {
@@ -57,6 +57,12 @@
         let soundEnabled = true;
         let gameRunning = false;
         let gameOver = false;
+
+        // Показати меню при завантаженні сторінки
+        window.onload = function() {
+            menu.style.display = 'block';
+        };
+
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
