@@ -58,11 +58,6 @@
         let gameRunning = false;
         let gameOver = false;
 
-        // Показати меню при завантаженні сторінки
-        window.onload = function() {
-            menu.style.display = 'block';
-        };
-
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
@@ -78,28 +73,36 @@
             { x: (2 * canvas.width) / 3 - 50, y: canvas.height / 2 - 50, width: 100, height: 100 }
         ];
 
+        // Початкові координати для кожного гравця
+        const initialPositions = {
+            player1: { x: canvas.width / 2 - tankSize / 2, y: canvas.height - tankSize - 10, angle: -90 },
+            player2: { x: canvas.width / 2 - tankSize / 2, y: 10, angle: 90 }
+        };
+
+        // Гравець 1
         const player1 = {
-            x: canvas.width / 2 - tankSize / 2,
-            y: canvas.height - tankSize - 10,
+            x: initialPositions.player1.x,
+            y: initialPositions.player1.y,
             width: tankSize,
             height: tankSize,
             color: 'green',
             keys: { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', shoot: 'KeyF', rotate: 'KeyR' },
             bullets: [],
-            angle: -90,  // Повернутий вгору
+            angle: initialPositions.player1.angle,
             shootDirection: -1,
             alive: true
         };
 
+        // Гравець 2
         const player2 = {
-            x: canvas.width / 2 - tankSize / 2,
-            y: 10,
+            x: initialPositions.player2.x,
+            y: initialPositions.player2.y,
             width: tankSize,
             height: tankSize,
             color: 'blue',
             keys: { up: 'KeyI', down: 'KeyK', left: 'KeyJ', right: 'KeyL', shoot: 'KeyH', rotate: 'KeyU' },
             bullets: [],
-            angle: 90,  // Повернутий вниз
+            angle: initialPositions.player2.angle,
             shootDirection: 1,
             alive: true
         };
@@ -200,11 +203,25 @@
             gameRunning = false;
         }
 
+        // Функція перезапуску гри
         function restartGame() {
             player1.alive = true;
             player2.alive = true;
+
+            // Скидання позицій та кутів
+            player1.x = initialPositions.player1.x;
+            player1.y = initialPositions.player1.y;
+            player1.angle = initialPositions.player1.angle;
+
+            player2.x = initialPositions.player2.x;
+            player2.y = initialPositions.player2.y;
+            player2.angle = initialPositions.player2.angle;
+
+            // Очищення куль
             player1.bullets = [];
             player2.bullets = [];
+
+            // Приховати повідомлення про кінець гри
             gameOverMessage.style.display = 'none';
             gameOver = false;
             gameRunning = true;
@@ -218,66 +235,57 @@
             ctx.rotate(player.angle * Math.PI / 180);
             ctx.fillStyle = player.color;
             ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
-            ctx.fillStyle = "black";
-            ctx.fillRect(10, -5, 20, 10);
             ctx.restore();
 
-            player.bullets.forEach((bullet) => {
-                ctx.fillStyle = 'red';
+            player.bullets.forEach(bullet => {
+                ctx.fillStyle = 'black';
                 ctx.fillRect(bullet.x, bullet.y, bulletSize, bulletSize);
             });
         }
 
         function drawObstacles() {
-            ctx.fillStyle = 'grey';
+            ctx.fillStyle = 'gray';
             obstacles.forEach(obstacle => {
                 ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
             });
         }
 
-        function drawRoad() {
-            ctx.fillStyle = '#d3d3d3';
-            ctx.fillRect(canvas.width / 2 - roadWidth / 2, 0, roadWidth, canvas.height);
-        }
-
         function gameLoop() {
-            if (gameOver || !gameRunning) return;
+            if (!gameRunning) return;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            drawRoad();
+            movePlayer(player1);
+            movePlayer(player2);
+
+            shoot(player1);
+            shoot(player2);
+
+            drawPlayer(player1);
+            drawPlayer(player2);
             drawObstacles();
 
-            players.forEach(player => {
-                if (player.alive) {
-                    movePlayer(player);
-                    shoot(player);
-                    drawPlayer(player);
-                }
-            });
-
-            player1.bullets.forEach((bullet, bulletIndex) => {
+            player1.bullets.forEach(bullet => {
                 if (checkCollision(bullet, player2)) {
                     player2.alive = false;
-                    player1.bullets.splice(bulletIndex, 1);
+                    checkGameOver();
                 }
             });
 
-            player2.bullets.forEach((bullet, bulletIndex) => {
+            player2.bullets.forEach(bullet => {
                 if (checkCollision(bullet, player1)) {
                     player1.alive = false;
-                    player2.bullets.splice(bulletIndex, 1);
+                    checkGameOver();
                 }
             });
 
-            checkGameOver();
-            requestAnimationFrame(gameLoop);
+            if (!gameOver) {
+                requestAnimationFrame(gameLoop);
+            }
         }
 
         document.getElementById('startButton').addEventListener('click', () => {
             menu.style.display = 'none';
-            player1.alive = true;
-            player2.alive = true;
             gameRunning = true;
             gameLoop();
         });
@@ -292,14 +300,20 @@
         });
 
         function toggleMenu() {
-            gameRunning = !gameRunning;
-            if (gameRunning) {
-                menu.style.display = 'none';
-                gameLoop();
-            } else {
+            if (menu.style.display === 'none') {
                 menu.style.display = 'block';
+                gameRunning = false;
+            } else {
+                menu.style.display = 'none';
+                gameRunning = true;
+                gameLoop();
             }
         }
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
     </script>
 </body>
 </html>
