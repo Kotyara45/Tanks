@@ -67,11 +67,12 @@
         canvas.height = window.innerHeight;
 
         const tankSize = 40;
-        const bulletSize = 10;
+        const bulletSize = 2;  // Зменшений розмір кулі до 2 пікселів
         const speed = 3;
         const bulletSpeed = 5;
         const roadWidth = 200;
-        const shootSound = new Audio('shoot-sound.mp3'); // Додати свій шлях до звуку
+        const shootSound = new Audio('shoot-sound.mp3'); // Звук 1-го гравця
+        const shootSound2 = new Audio('shoot-sound2.mp3'); // Звук 2-го гравця
 
         const obstacles = [
             { x: canvas.width / 3, y: canvas.height / 2 - 50, width: 100, height: 100 },
@@ -87,7 +88,8 @@
             keys: { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', shoot: 'KeyF', rotate: 'KeyR' },
             bullets: [],
             angle: -90,  // Повернутий вгору
-            shootDirection: -1,
+            canShoot: true,
+            shootCooldown: 5000, // 5 секунд
             alive: true
         };
 
@@ -100,7 +102,8 @@
             keys: { up: 'KeyI', down: 'KeyK', left: 'KeyJ', right: 'KeyL', shoot: 'KeyH', rotate: 'KeyU' },
             bullets: [],
             angle: 90,  // Повернутий вниз
-            shootDirection: 1,
+            canShoot: true,
+            shootCooldown: 5000, // 5 секунд
             alive: true
         };
 
@@ -138,9 +141,9 @@
             if (player.y + player.height > canvas.height) player.y = canvas.height - player.height;
         }
 
-        function shoot(player) {
-            if (keysPressed[player.keys.shoot]) {
-                if (soundEnabled) shootSound.play();
+        function shoot(player, sound) {
+            if (keysPressed[player.keys.shoot] && player.canShoot) {
+                if (soundEnabled) sound.play();
                 const bulletX = player.x + player.width / 2 + (player.width / 2) * Math.cos(player.angle * Math.PI / 180);
                 const bulletY = player.y + player.height / 2 + (player.height / 2) * Math.sin(player.angle * Math.PI / 180);
                 player.bullets.push({
@@ -148,6 +151,9 @@
                     y: bulletY,
                     angle: player.angle
                 });
+
+                player.canShoot = false;
+                setTimeout(() => player.canShoot = true, player.shootCooldown);
             }
 
             for (let i = 0; i < player.bullets.length; i++) {
@@ -155,9 +161,8 @@
                 bullet.x += bulletSpeed * Math.cos(bullet.angle * Math.PI / 180);
                 bullet.y += bulletSpeed * Math.sin(bullet.angle * Math.PI / 180);
 
-                // Перевірка на зіткнення з перешкодами
                 if (checkBulletCollisionWithObstacles(bullet)) {
-                    player.bullets.splice(i, 1); // Видалення кулі, якщо вона зіткнулась з перешкодою
+                    player.bullets.splice(i, 1); 
                     i--;
                     continue;
                 }
@@ -198,6 +203,11 @@
             gameOverMessage.textContent = message;
             gameOverMessage.style.display = 'block';
             gameRunning = false;
+
+            setTimeout(() => {
+                gameOverMessage.style.display = 'none';
+                menu.style.display = 'block';
+            }, 3000); // Повернення до меню через 3 секунди
         }
 
         function restartGame() {
@@ -251,7 +261,7 @@
             players.forEach(player => {
                 if (player.alive) {
                     movePlayer(player);
-                    shoot(player);
+                    shoot(player, player === player1 ? shootSound : shootSound2);
                     drawPlayer(player);
                 }
             });
