@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -56,34 +56,34 @@
         const bulletSpeed = 10;
         let gameOver = false;
 
-        // Инициализация игроков
+        // Ініціалізація гравців
         const player1 = {
             x: canvas.width / 2 - tankSize / 2,
-            y: canvas.height - tankSize - 10,  // Зеленый танк снизу
+            y: canvas.height - tankSize - 10,  // Зелений танк знизу
             width: tankSize,
             height: tankSize,
             color: 'green',
             keys: { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', shoot: 'KeyF' },
             bullets: [],
-            shootDirection: -1,  // Стреляет вверх
+            shootDirection: -1,  // Стріляє вгору
             alive: true
         };
 
         const player2 = {
             x: canvas.width / 2 - tankSize / 2,
-            y: 10,  // Синий танк сверху
+            y: 10,  // Синій танк зверху
             width: tankSize,
             height: tankSize,
             color: 'blue',
             keys: { up: 'KeyI', down: 'KeyK', left: 'KeyJ', right: 'KeyL', shoot: 'KeyH' },
             bullets: [],
-            shootDirection: 1,  // Стреляет вниз
+            shootDirection: 1,  // Стріляє вниз
             alive: true
         };
 
         const players = [player1, player2];
 
-        // Обработка нажатия клавиш
+        // Обробка натискань клавіш
         const keysPressed = {};
         window.addEventListener('keydown', (e) => {
             keysPressed[e.code] = true;
@@ -92,21 +92,21 @@
             keysPressed[e.code] = false;
         });
 
-        // Функция перемещения танков
+        // Функція переміщення танків
         function movePlayer(player) {
             if (keysPressed[player.keys.up]) player.y -= speed;
             if (keysPressed[player.keys.down]) player.y += speed;
             if (keysPressed[player.keys.left]) player.x -= speed;
             if (keysPressed[player.keys.right]) player.x += speed;
 
-            // Ограничение передвижения по полю
+            // Обмеження переміщення по полю
             if (player.x < 0) player.x = 0;
             if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
             if (player.y < 0) player.y = 0;
             if (player.y + player.height > canvas.height) player.y = canvas.height - player.height;
         }
 
-        // Стрельба
+        // Стрільба
         function shoot(player) {
             if (keysPressed[player.keys.shoot]) {
                 player.bullets.push({ x: player.x + player.width / 2 - bulletSize / 2, y: player.y });
@@ -116,7 +116,7 @@
                 const bullet = player.bullets[i];
                 bullet.y += bulletSpeed * player.shootDirection;
 
-                // Удаление пуль, если они выходят за пределы экрана
+                // Видалення куль, якщо вони виходять за межі екрану
                 if (bullet.y < 0 || bullet.y > canvas.height) {
                     player.bullets.splice(i, 1);
                     i--;
@@ -124,7 +124,7 @@
             }
         }
 
-        // Проверка попаданий
+        // Перевірка попадання
         function checkCollision(bullet, player) {
             return bullet.x < player.x + player.width &&
                    bullet.x + bulletSize > player.x &&
@@ -132,16 +132,16 @@
                    bullet.y + bulletSize > player.y;
         }
 
-        // Проверка на победу
+        // Перевірка на поразку
         function checkGameOver() {
             if (!player1.alive) {
-                endGame("Синий игрок победил!");
+                endGame("Синій гравець переміг!");
             } else if (!player2.alive) {
-                endGame("Зеленый игрок победил!");
+                endGame("Зелений гравець переміг!");
             }
         }
 
-        // Функция завершения игры
+        // Функція завершення гри
         function endGame(message) {
             gameOver = true;
             const gameOverMessage = document.getElementById('gameOverMessage');
@@ -149,20 +149,20 @@
             gameOverMessage.style.display = 'block';
         }
 
-        // Рендеринг
+        // Малювання гравців
         function drawPlayer(player) {
             if (!player.alive) return;
             ctx.fillStyle = player.color;
             ctx.fillRect(player.x, player.y, player.width, player.height);
 
-            // Отрисовка пуль
+            // Малювання куль
             player.bullets.forEach((bullet) => {
                 ctx.fillStyle = 'red';
                 ctx.fillRect(bullet.x, bullet.y, bulletSize, bulletSize);
             });
         }
 
-        // Основной игровой цикл
+        // Основний ігровий цикл
         function gameLoop() {
             if (gameOver) return;
 
@@ -176,7 +176,7 @@
                 }
             });
 
-            // Проверка попаданий пуль по танкам
+            // Перевірка попадання куль в танки
             player1.bullets.forEach((bullet, bulletIndex) => {
                 if (checkCollision(bullet, player2)) {
                     player2.alive = false;
