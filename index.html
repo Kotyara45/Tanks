@@ -63,7 +63,7 @@
             width: tankSize,
             height: tankSize,
             color: 'green',
-            keys: { up: 'w', down: 's', left: 'a', right: 'd', shoot: 'f' },
+            keys: { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', shoot: 'KeyF' },
             bullets: [],
             shootDirection: -1,  // Стреляет вверх
             alive: true
@@ -75,7 +75,7 @@
             width: tankSize,
             height: tankSize,
             color: 'blue',
-            keys: { up: 'i', down: 'k', left: 'j', right: 'l', shoot: 'h' },
+            keys: { up: 'KeyI', down: 'KeyK', left: 'KeyJ', right: 'KeyL', shoot: 'KeyH' },
             bullets: [],
             shootDirection: 1,  // Стреляет вниз
             alive: true
@@ -86,10 +86,10 @@
         // Обработка нажатия клавиш
         const keysPressed = {};
         window.addEventListener('keydown', (e) => {
-            keysPressed[e.key.toLowerCase()] = true;
+            keysPressed[e.code] = true;
         });
         window.addEventListener('keyup', (e) => {
-            keysPressed[e.key.toLowerCase()] = false;
+            keysPressed[e.code] = false;
         });
 
         // Функция перемещения танков
