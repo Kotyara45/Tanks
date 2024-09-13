@@ -106,6 +106,8 @@
 
             if (e.code === 'Escape') {
                 toggleMenu();
+            } else if (e.code === 'Space' && gameOver) {
+                restartGame();
             }
         });
         window.addEventListener('keyup', (e) => {
@@ -147,11 +149,27 @@
                 bullet.x += bulletSpeed * Math.cos(bullet.angle * Math.PI / 180);
                 bullet.y += bulletSpeed * Math.sin(bullet.angle * Math.PI / 180);
 
+                // Перевірка на зіткнення з перешкодами
+                if (checkBulletCollisionWithObstacles(bullet)) {
+                    player.bullets.splice(i, 1); // Видалення кулі, якщо вона зіткнулась з перешкодою
+                    i--;
+                    continue;
+                }
+
                 if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
                     player.bullets.splice(i, 1);
                     i--;
                 }
             }
+        }
+
+        function checkBulletCollisionWithObstacles(bullet) {
+            return obstacles.some(obstacle => {
+                return bullet.x < obstacle.x + obstacle.width &&
+                       bullet.x + bulletSize > obstacle.x &&
+                       bullet.y < obstacle.y + obstacle.height &&
+                       bullet.y + bulletSize > obstacle.y;
+            });
         }
 
         function checkCollision(bullet, player) {
@@ -174,6 +192,17 @@
             gameOverMessage.textContent = message;
             gameOverMessage.style.display = 'block';
             gameRunning = false;
+        }
+
+        function restartGame() {
+            player1.alive = true;
+            player2.alive = true;
+            player1.bullets = [];
+            player2.bullets = [];
+            gameOverMessage.style.display = 'none';
+            gameOver = false;
+            gameRunning = true;
+            gameLoop();
         }
 
         function drawPlayer(player) {
@@ -201,8 +230,8 @@
         }
 
         function drawRoad() {
-            ctx.fillStyle = '#707070';  // Сірий для дороги
-            ctx.fillRect((canvas.width - roadWidth) / 2, 0, roadWidth, canvas.height);
+            ctx.fillStyle = '#d3d3d3';
+            ctx.fillRect(canvas.width / 2 - roadWidth / 2, 0, roadWidth, canvas.height);
         }
 
         function gameLoop() {
@@ -236,18 +265,13 @@
             });
 
             checkGameOver();
-
             requestAnimationFrame(gameLoop);
         }
 
         document.getElementById('startButton').addEventListener('click', () => {
             menu.style.display = 'none';
-            gameOverMessage.style.display = 'none';
             player1.alive = true;
             player2.alive = true;
-            player1.bullets = [];
-            player2.bullets = [];
-            gameOver = false;
             gameRunning = true;
             gameLoop();
         });
