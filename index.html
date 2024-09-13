@@ -149,9 +149,8 @@
                 bullet.x += bulletSpeed * Math.cos(bullet.angle * Math.PI / 180);
                 bullet.y += bulletSpeed * Math.sin(bullet.angle * Math.PI / 180);
 
-                // Перевірка на зіткнення з перешкодами
                 if (checkBulletCollisionWithObstacles(bullet)) {
-                    player.bullets.splice(i, 1); // Видалення кулі, якщо вона зіткнулась з перешкодою
+                    player.bullets.splice(i, 1);
                     i--;
                     continue;
                 }
@@ -194,6 +193,16 @@
             gameRunning = false;
         }
 
+        function getRandomCorner() {
+            const corners = [
+                { x: 10, y: 10 },  // Верхній лівий кут
+                { x: canvas.width - tankSize - 10, y: 10 },  // Верхній правий кут
+                { x: 10, y: canvas.height - tankSize - 10 },  // Нижній лівий кут
+                { x: canvas.width - tankSize - 10, y: canvas.height - tankSize - 10 }  // Нижній правий кут
+            ];
+            return corners[Math.floor(Math.random() * corners.length)];
+        }
+
         function restartGame() {
             player1.alive = true;
             player2.alive = true;
@@ -201,6 +210,15 @@
             player2.bullets = [];
             gameOverMessage.style.display = 'none';
             gameOver = false;
+
+            const newPlayer1Pos = getRandomCorner();
+            const newPlayer2Pos = getRandomCorner();
+
+            player1.x = newPlayer1Pos.x;
+            player1.y = newPlayer1Pos.y;
+            player2.x = newPlayer2Pos.x;
+            player2.y = newPlayer2Pos.y;
+
             gameRunning = true;
             gameLoop();
         }
