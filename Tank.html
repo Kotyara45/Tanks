@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Танчики</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        canvas {
+            background-color: #eee;
+            display: block;
+        }
+
+        .tank {
+            width: 40px;
+            height: 40px;
+            background-color: green;
+            position: absolute;
+        }
+
+        .bullet {
+            width: 10px;
+            height: 10px;
+            background-color: red;
+            position: absolute;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const tankSize = 40;
+        const bulletSize = 10;
+        const speed = 5;
+        const bulletSpeed = 10;
+
+        // Инициализация игроков
+        const player1 = {
+            x: 100,
+            y: 100,
+            width: tankSize,
+            height: tankSize,
+            color: 'green',
+            keys: { up: 'w', down: 's', left: 'a', right: 'd', shoot: 'f' },
+            bullets: []
+        };
+
+        const player2 = {
+            x: 400,
+            y: 100,
+            width: tankSize,
+            height: tankSize,
+            color: 'blue',
+            keys: { up: 'i', down: 'k', left: 'j', right: 'l', shoot: 'h' },
+            bullets: []
+        };
+
+        const players = [player1, player2];
+
+        // Обработка нажатия клавиш
+        const keysPressed = {};
+        window.addEventListener('keydown', (e) => {
+            keysPressed[e.key.toLowerCase()] = true;
+        });
+        window.addEventListener('keyup', (e) => {
+            keysPressed[e.key.toLowerCase()] = false;
+        });
+
+        // Функция перемещения танков
+        function movePlayer(player) {
+            if (keysPressed[player.keys.up]) player.y -= speed;
+            if (keysPressed[player.keys.down]) player.y += speed;
+            if (keysPressed[player.keys.left]) player.x -= speed;
+            if (keysPressed[player.keys.right]) player.x += speed;
+
+            // Ограничение передвижения по полю
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+            if (player.y < 0) player.y = 0;
+            if (player.y + player.height > canvas.height) player.y = canvas.height - player.height;
+        }
+
+        // Стрельба
+        function shoot(player) {
+            if (keysPressed[player.keys.shoot]) {
+                player.bullets.push({ x: player.x + player.width / 2, y: player.y });
+            }
+
+            for (let i = 0; i < player.bullets.length; i++) {
+                const bullet = player.bullets[i];
+                bullet.y -= bulletSpeed;
+
+                // Удаление пуль, если они выходят за пределы экрана
+                if (bullet.y < 0) {
+                    player.bullets.splice(i, 1);
+                    i--;
+                }
+            }
+        }
+
+        // Рендеринг
+        function drawPlayer(player) {
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+
+            // Отрисовка пуль
+            player.bullets.forEach((bullet) => {
+                ctx.fillStyle = 'red';
+                ctx.fillRect(bullet.x, bullet.y, bulletSize, bulletSize);
+            });
+        }
+
+        // Основной игровой цикл
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            players.forEach(player => {
+                movePlayer(player);
+                shoot(player);
+                drawPlayer(player);
+            });
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>
