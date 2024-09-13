@@ -15,11 +15,17 @@
             display: block;
         }
 
-        .bullet {
-            width: 10px;
-            height: 10px;
-            background-color: red;
+        #menu {
             position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            text-align: center;
+            color: white;
+            font-size: 24px;
+            display: none;
         }
 
         #gameOverMessage {
@@ -35,11 +41,22 @@
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
+    <div id="menu">
+        <h1>Меню</h1>
+        <button id="startButton">Запустити гру</button><br><br>
+        <button id="toggleSoundButton">Вимкнути звук</button><br><br>
+        <button id="exitButton">Вийти</button>
+    </div>
     <div id="gameOverMessage"></div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        const menu = document.getElementById('menu');
+        const gameOverMessage = document.getElementById('gameOverMessage');
+        let soundEnabled = true;
+        let gameRunning = false;
+        let gameOver = false;
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
@@ -47,52 +64,54 @@
         const bulletSize = 10;
         const speed = 3;
         const bulletSpeed = 5;
-        let gameOver = false;
+        const roadWidth = 200;
+        const shootSound = new Audio('shoot-sound.mp3'); // Додати свій шлях до звуку
 
         const obstacles = [
             { x: canvas.width / 3, y: canvas.height / 2 - 50, width: 100, height: 100 },
             { x: (2 * canvas.width) / 3 - 50, y: canvas.height / 2 - 50, width: 100, height: 100 }
         ];
 
-        // Ініціалізація гравців
         const player1 = {
             x: canvas.width / 2 - tankSize / 2,
-            y: canvas.height - tankSize - 10,  // Зелений танк знизу
+            y: canvas.height - tankSize - 10,
             width: tankSize,
             height: tankSize,
             color: 'green',
             keys: { up: 'KeyW', down: 'KeyS', left: 'KeyA', right: 'KeyD', shoot: 'KeyF', rotate: 'KeyR' },
             bullets: [],
-            angle: 0,
-            shootDirection: -1,  // Стріляє вгору
+            angle: -90,  // Повернутий вгору
+            shootDirection: -1,
             alive: true
         };
 
         const player2 = {
             x: canvas.width / 2 - tankSize / 2,
-            y: 10,  // Синій танк зверху
+            y: 10,
             width: tankSize,
             height: tankSize,
             color: 'blue',
             keys: { up: 'KeyI', down: 'KeyK', left: 'KeyJ', right: 'KeyL', shoot: 'KeyH', rotate: 'KeyU' },
             bullets: [],
-            angle: 180,
-            shootDirection: 1,  // Стріляє вниз
+            angle: 90,  // Повернутий вниз
+            shootDirection: 1,
             alive: true
         };
 
         const players = [player1, player2];
 
-        // Обробка натискань клавіш
         const keysPressed = {};
         window.addEventListener('keydown', (e) => {
             keysPressed[e.code] = true;
+
+            if (e.code === 'Escape') {
+                toggleMenu();
+            }
         });
         window.addEventListener('keyup', (e) => {
             keysPressed[e.code] = false;
         });
 
-        // Функція переміщення танків
         function movePlayer(player) {
             if (keysPressed[player.keys.up]) {
                 player.x += speed * Math.cos(player.angle * Math.PI / 180);
@@ -102,20 +121,18 @@
                 player.x -= speed * Math.cos(player.angle * Math.PI / 180);
                 player.y -= speed * Math.sin(player.angle * Math.PI / 180);
             }
-            if (keysPressed[player.keys.left]) player.x -= speed;
-            if (keysPressed[player.keys.right]) player.x += speed;
-            if (keysPressed[player.keys.rotate]) player.angle += 5;
+            if (keysPressed[player.keys.left]) player.angle -= 5;
+            if (keysPressed[player.keys.right]) player.angle += 5;
 
-            // Обмеження переміщення по полю
             if (player.x < 0) player.x = 0;
             if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
             if (player.y < 0) player.y = 0;
             if (player.y + player.height > canvas.height) player.y = canvas.height - player.height;
         }
 
-        // Стрільба
         function shoot(player) {
             if (keysPressed[player.keys.shoot]) {
+                if (soundEnabled) shootSound.play();
                 const bulletX = player.x + player.width / 2 + (player.width / 2) * Math.cos(player.angle * Math.PI / 180);
                 const bulletY = player.y + player.height / 2 + (player.height / 2) * Math.sin(player.angle * Math.PI / 180);
                 player.bullets.push({
@@ -130,7 +147,6 @@
                 bullet.x += bulletSpeed * Math.cos(bullet.angle * Math.PI / 180);
                 bullet.y += bulletSpeed * Math.sin(bullet.angle * Math.PI / 180);
 
-                // Видалення куль, якщо вони виходять за межі екрану
                 if (bullet.x < 0 || bullet.x > canvas.width || bullet.y < 0 || bullet.y > canvas.height) {
                     player.bullets.splice(i, 1);
                     i--;
@@ -138,7 +154,6 @@
             }
         }
 
-        // Перевірка попадання
         function checkCollision(bullet, player) {
             return bullet.x < player.x + player.width &&
                    bullet.x + bulletSize > player.x &&
@@ -146,7 +161,6 @@
                    bullet.y + bulletSize > player.y;
         }
 
-        // Перевірка на поразку
         function checkGameOver() {
             if (!player1.alive) {
                 endGame("Синій гравець переміг!");
@@ -155,15 +169,13 @@
             }
         }
 
-        // Функція завершення гри
         function endGame(message) {
             gameOver = true;
-            const gameOverMessage = document.getElementById('gameOverMessage');
             gameOverMessage.textContent = message;
             gameOverMessage.style.display = 'block';
+            gameRunning = false;
         }
 
-        // Малювання танків
         function drawPlayer(player) {
             if (!player.alive) return;
             ctx.save();
@@ -171,18 +183,16 @@
             ctx.rotate(player.angle * Math.PI / 180);
             ctx.fillStyle = player.color;
             ctx.fillRect(-player.width / 2, -player.height / 2, player.width, player.height);
-            ctx.fillStyle = "black";  // Дуло
+            ctx.fillStyle = "black";
             ctx.fillRect(10, -5, 20, 10);
             ctx.restore();
 
-            // Малювання куль
             player.bullets.forEach((bullet) => {
                 ctx.fillStyle = 'red';
                 ctx.fillRect(bullet.x, bullet.y, bulletSize, bulletSize);
             });
         }
 
-        // Малювання перешкод
         function drawObstacles() {
             ctx.fillStyle = 'grey';
             obstacles.forEach(obstacle => {
@@ -190,12 +200,17 @@
             });
         }
 
-        // Основний ігровий цикл
+        function drawRoad() {
+            ctx.fillStyle = '#707070';  // Сірий для дороги
+            ctx.fillRect((canvas.width - roadWidth) / 2, 0, roadWidth, canvas.height);
+        }
+
         function gameLoop() {
-            if (gameOver) return;
+            if (gameOver || !gameRunning) return;
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            drawRoad();
             drawObstacles();
 
             players.forEach(player => {
@@ -206,7 +221,6 @@
                 }
             });
 
-            // Перевірка попадання куль в танки
             player1.bullets.forEach((bullet, bulletIndex) => {
                 if (checkCollision(bullet, player2)) {
                     player2.alive = false;
@@ -226,7 +240,36 @@
             requestAnimationFrame(gameLoop);
         }
 
-        gameLoop();
+        document.getElementById('startButton').addEventListener('click', () => {
+            menu.style.display = 'none';
+            gameOverMessage.style.display = 'none';
+            player1.alive = true;
+            player2.alive = true;
+            player1.bullets = [];
+            player2.bullets = [];
+            gameOver = false;
+            gameRunning = true;
+            gameLoop();
+        });
+
+        document.getElementById('toggleSoundButton').addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            document.getElementById('toggleSoundButton').textContent = soundEnabled ? 'Вимкнути звук' : 'Увімкнути звук';
+        });
+
+        document.getElementById('exitButton').addEventListener('click', () => {
+            window.close();
+        });
+
+        function toggleMenu() {
+            gameRunning = !gameRunning;
+            if (gameRunning) {
+                menu.style.display = 'none';
+                gameLoop();
+            } else {
+                menu.style.display = 'block';
+            }
+        }
     </script>
 </body>
 </html>
