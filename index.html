@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
@@ -65,7 +65,7 @@
         const speed = 3;
         const bulletSpeed = 5;
         const roadWidth = 200;
-        const shootSound = new Audio('shoot-sound.mp3'); // Додати свій шлях до звуку
+        const shootSound = new Audio('vyistrel-iz-antikvarnogo-rujya.mp3'); // Звук пострілу
 
         const obstacles = [
             { x: canvas.width / 3, y: canvas.height / 2 - 50, width: 100, height: 100 },
@@ -82,7 +82,8 @@
             bullets: [],
             angle: -90,  // Повернутий вгору
             shootDirection: -1,
-            alive: true
+            alive: true,
+            canShoot: true  // Додаємо змінну canShoot для кулдауна
         };
 
         const player2 = {
@@ -95,7 +96,8 @@
             bullets: [],
             angle: 90,  // Повернутий вниз
             shootDirection: 1,
-            alive: true
+            alive: true,
+            canShoot: true  // Додаємо змінну canShoot для кулдауна
         };
 
         const players = [player1, player2];
@@ -133,7 +135,7 @@
         }
 
         function shoot(player) {
-            if (keysPressed[player.keys.shoot]) {
+            if (keysPressed[player.keys.shoot] && player.canShoot) {  // Додаємо перевірку на кулдаун
                 if (soundEnabled) shootSound.play();
                 const bulletX = player.x + player.width / 2 + (player.width / 2) * Math.cos(player.angle * Math.PI / 180);
                 const bulletY = player.y + player.height / 2 + (player.height / 2) * Math.sin(player.angle * Math.PI / 180);
@@ -142,6 +144,12 @@
                     y: bulletY,
                     angle: player.angle
                 });
+                player.canShoot = false;  // Після пострілу встановлюємо canShoot в false
+
+                // Повертаємо можливість стріляти через 5 секунд (5000 мс)
+                setTimeout(() => {
+                    player.canShoot = true;
+                }, 5000);
             }
 
             for (let i = 0; i < player.bullets.length; i++) {
@@ -149,8 +157,9 @@
                 bullet.x += bulletSpeed * Math.cos(bullet.angle * Math.PI / 180);
                 bullet.y += bulletSpeed * Math.sin(bullet.angle * Math.PI / 180);
 
+                // Перевірка на зіткнення з перешкодами
                 if (checkBulletCollisionWithObstacles(bullet)) {
-                    player.bullets.splice(i, 1);
+                    player.bullets.splice(i, 1); // Видалення кулі, якщо вона зіткнулась з перешкодою
                     i--;
                     continue;
                 }
@@ -193,16 +202,6 @@
             gameRunning = false;
         }
 
-        function getRandomCorner() {
-            const corners = [
-                { x: 10, y: 10 },  // Верхній лівий кут
-                { x: canvas.width - tankSize - 10, y: 10 },  // Верхній правий кут
-                { x: 10, y: canvas.height - tankSize - 10 },  // Нижній лівий кут
-                { x: canvas.width - tankSize - 10, y: canvas.height - tankSize - 10 }  // Нижній правий кут
-            ];
-            return corners[Math.floor(Math.random() * corners.length)];
-        }
-
         function restartGame() {
             player1.alive = true;
             player2.alive = true;
@@ -210,15 +209,6 @@
             player2.bullets = [];
             gameOverMessage.style.display = 'none';
             gameOver = false;
-
-            const newPlayer1Pos = getRandomCorner();
-            const newPlayer2Pos = getRandomCorner();
-
-            player1.x = newPlayer1Pos.x;
-            player1.y = newPlayer1Pos.y;
-            player2.x = newPlayer2Pos.x;
-            player2.y = newPlayer2Pos.y;
-
             gameRunning = true;
             gameLoop();
         }
@@ -242,56 +232,56 @@
 
         function drawObstacles() {
             ctx.fillStyle = 'grey';
-            obstacles.forEach(obstacle => {
+            obstacles.forEach((obstacle) => {
                 ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
             });
         }
 
-        function drawRoad() {
-            ctx.fillStyle = '#d3d3d3';
-            ctx.fillRect(canvas.width / 2 - roadWidth / 2, 0, roadWidth, canvas.height);
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        function toggleMenu() {
+            gameRunning = !gameRunning;
+            menu.style.display = gameRunning ? 'none' : 'block';
+            if (gameRunning) {
+                gameLoop();
+            }
         }
 
         function gameLoop() {
-            if (gameOver || !gameRunning) return;
-
+            if (!gameRunning) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            drawRoad();
             drawObstacles();
 
-            players.forEach(player => {
-                if (player.alive) {
-                    movePlayer(player);
-                    shoot(player);
-                    drawPlayer(player);
-                }
+            players.forEach((player) => {
+                movePlayer(player);
+                shoot(player);
+                drawPlayer(player);
             });
 
-            player1.bullets.forEach((bullet, bulletIndex) => {
-                if (checkCollision(bullet, player2)) {
-                    player2.alive = false;
-                    player1.bullets.splice(bulletIndex, 1);
-                }
-            });
-
-            player2.bullets.forEach((bullet, bulletIndex) => {
-                if (checkCollision(bullet, player1)) {
-                    player1.alive = false;
-                    player2.bullets.splice(bulletIndex, 1);
-                }
+            players.forEach((player, i) => {
+                players.forEach((otherPlayer, j) => {
+                    if (i !== j) {
+                        player.bullets.forEach((bullet, index) => {
+                            if (checkCollision(bullet, otherPlayer)) {
+                                otherPlayer.alive = false;
+                                player.bullets.splice(index, 1);
+                            }
+                        });
+                    }
+                });
             });
 
             checkGameOver();
+
             requestAnimationFrame(gameLoop);
         }
 
         document.getElementById('startButton').addEventListener('click', () => {
-            menu.style.display = 'none';
-            player1.alive = true;
-            player2.alive = true;
-            gameRunning = true;
-            gameLoop();
+            toggleMenu();
         });
 
         document.getElementById('toggleSoundButton').addEventListener('click', () => {
@@ -302,16 +292,6 @@
         document.getElementById('exitButton').addEventListener('click', () => {
             window.close();
         });
-
-        function toggleMenu() {
-            gameRunning = !gameRunning;
-            if (gameRunning) {
-                menu.style.display = 'none';
-                gameLoop();
-            } else {
-                menu.style.display = 'block';
-            }
-        }
     </script>
 </body>
 </html>
