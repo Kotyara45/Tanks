@@ -73,13 +73,15 @@
         const roadWidth = 200;
         const shootSound = new Audio('shoot-sound.mp3'); // Звук 1-го гравця
         const shootSound2 = new Audio('shoot-sound2.mp3'); // Звук 2-го гравця
+        const moveSound = new Audio('move-sound.mp3');  // Звук їзди танка
+        moveSound.loop = true;  // Звук їзди повинен повторюватися
+        moveSound.volume = 0.5;  // Встановлюємо гучність на 50%
 
         const obstacles = [
             { x: canvas.width / 3, y: canvas.height / 2 - 50, width: 100, height: 100 },
             { x: (2 * canvas.width) / 3 - 50, y: canvas.height / 2 - 50, width: 100, height: 100 }
         ];
 
-        // Початкові позиції танків
         const startPosition1 = { x: canvas.width / 2 - tankSize / 2, y: canvas.height - tankSize - 10 };
         const startPosition2 = { x: canvas.width / 2 - tankSize / 2, y: 10 };
 
@@ -93,7 +95,8 @@
             angle: -90,  // Повернутий вгору
             canShoot: true,
             shootCooldown: 5000, // 5 секунд
-            alive: true
+            alive: true,
+            isMoving: false  // Додаємо статус руху для контролю звуку
         };
 
         const player2 = {
@@ -106,7 +109,8 @@
             angle: 90,  // Повернутий вниз
             canShoot: true,
             shootCooldown: 5000, // 5 секунд
-            alive: true
+            alive: true,
+            isMoving: false  // Статус руху
         };
 
         const players = [player1, player2];
@@ -128,17 +132,40 @@
         function movePlayer(player) {
             const prevX = player.x;
             const prevY = player.y;
+            let moving = false;  // Фіксуємо, чи рухається гравець
 
             if (keysPressed[player.keys.up]) {
                 player.x += speed * Math.cos(player.angle * Math.PI / 180);
                 player.y += speed * Math.sin(player.angle * Math.PI / 180);
+                moving = true;
             }
             if (keysPressed[player.keys.down]) {
                 player.x -= speed * Math.cos(player.angle * Math.PI / 180);
                 player.y -= speed * Math.sin(player.angle * Math.PI / 180);
+                moving = true;
             }
-            if (keysPressed[player.keys.left]) player.angle -= 5;
-            if (keysPressed[player.keys.right]) player.angle += 5;
+            if (keysPressed[player.keys.left]) {
+                player.angle -= 5;
+                moving = true;
+            }
+            if (keysPressed[player.keys.right]) {
+                player.angle += 5;
+                moving = true;
+            }
+
+            // Якщо танк рухається, включаємо звук руху
+            if (moving) {
+                if (!player.isMoving && soundEnabled) {
+                    moveSound.play();
+                }
+                player.isMoving = true;
+            } else {
+                // Якщо танк не рухається, вимикаємо звук
+                if (player.isMoving) {
+                    moveSound.pause();
+                }
+                player.isMoving = false;
+            }
 
             // Перевірка зіткнення з краями поля
             if (player.x < 0) player.x = 0;
@@ -149,7 +176,7 @@
             // Перевірка зіткнення з перешкодами
             if (checkTankCollisionWithObstacles(player)) {
                 player.x = prevX;
-                player.y = prevY;  // Повернення на попередню позицію при зіткненні
+                player.y = prevY;
             }
         }
 
@@ -224,6 +251,9 @@
             gameOverMessage.textContent = message;
             gameOverMessage.style.display = 'block';
             gameRunning = false;
+
+            // Зупиняємо звук руху після завершення гри
+            moveSound.pause();
         }
 
         function restartGame() {
@@ -317,6 +347,9 @@
         document.getElementById('toggleSoundButton').addEventListener('click', () => {
             soundEnabled = !soundEnabled;
             document.getElementById('toggleSoundButton').textContent = soundEnabled ? 'Вимкнути звук' : 'Увімкнути звук';
+            if (!soundEnabled) {
+                moveSound.pause();
+            }
         });
 
         document.getElementById('exitButton').addEventListener('click', () => {
